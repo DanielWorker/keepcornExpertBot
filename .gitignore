@@ -1,6 +1,8 @@
 # Project exclude paths
 /node_modules/
 .idea
+.env
 .vscode
 node_modules
 .DS_Store
+/test.js

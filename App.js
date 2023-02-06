@@ -1,11 +1,12 @@
 import {Telegraf} from 'telegraf';
 import dotenv from 'dotenv';
-import mainRouter from './router/router.js'
+import mainRouter from './src/router/router.js'
+// import Queries from "./src/database/main_service.js";
 
 dotenv.config();
-// Answer payments provider
 
-
+// const query = new Queries()
+// query.runAutoModels()
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 bot.launch();
