@@ -62,3 +62,38 @@ export async function getCoordinates(cityName) {
   const lon = request.data.features["0"].geometry.coordinates["0"]
   return {lat: lat, lon: lon}
 }
+
+export async function updateStateMessages(array, user) {
+  let data;
+  if (!array) {
+    data = null;
+  } else {
+    data = JSON.stringify(array);
+  }
+  return user.update({messagesId: data});
+}
+
+export async function cleanStateMessages(ctx, messagesId, user) {
+  if (!messagesId) {
+    return false;
+  }
+  for (const msgId of messagesId) {
+    try {
+      await ctx.deleteMessage(msgId);
+    } catch (e) {
+      console.log(e);
+      return user.update({messagesId: null});
+    }
+  }
+  return user.update({messagesId: null});
+}
+
+export function getAge(birthDate) {
+  let today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  let m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}

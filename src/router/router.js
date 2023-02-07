@@ -1,7 +1,8 @@
 import {Composer} from 'telegraf';
 import ExpertRegistrationText from "../role/expert/registration/text.js";
 import Queries from "../database/main_service.js";
-// import Queries from "../database/main_service.js";
+import ExpertRegistrationCallback from "../role/expert/registration/callback.js";
+import {CallbackLogger, MessageLogger} from "../utils/logs.js";
 
 const mainRouter = new Composer();
 
@@ -18,27 +19,41 @@ class Router extends Queries {
     this.userId = ctx.from.id;
   }
 
-  async messageInit() {
+  messageInit() {
     this.text = this.ctx.message.text
     this.messageId = this.ctx.message.message_id;
+    this.logger = new MessageLogger(this.ctx);
   }
 
-  async callbackInit() {
+  callbackInit() {
     this.callback = this.ctx.callbackQuery.data
     this.messageId = this.ctx.callbackQuery.message.message_id
+    this.logger = new CallbackLogger(this.ctx);
   }
 
   async textHandler(ctx) {
-    await this.messageInit()
-    const expert = await this.getExpert(this.userId)
+    this.messageInit()
+    let expert = await this.getExpert(this.userId)
     if (!expert) {
-      const expertReg = new ExpertRegistrationText(ctx)
-      return expertReg.handler()
+      expert = await this.createExpert(this.firstName, this.lastName, this.username, this.userId)
     }
+    this.logger.routerLog(expert.state)
+    const expertReg = new ExpertRegistrationText(ctx, expert)
+    return expertReg.handler()
   }
 
   async callbackHandler() {
-    await this.callbackInit()
+    this.callbackInit()
+    let expert = await this.getExpert(this.userId)
+    if (!expert) {
+      expert = await this.createExpert(this.firstName, this.lastName, this.username, this.userId)
+    }
+    this.logger.routerLog(expert.state)
+    if (this.callback.startsWith('e-reg/')) {
+      const expertReg = new ExpertRegistrationCallback(this.ctx, expert)
+      await expertReg.handler()
+    }
+    return this.ctx.answerCbQuery()
   }
 }
 

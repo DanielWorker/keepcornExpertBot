@@ -45,7 +45,7 @@ export default class Experts extends Model {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    status: {
+    state: {
       type: DataTypes.STRING(255),
       allowNull: true
     },
@@ -62,6 +62,11 @@ export default class Experts extends Model {
     crypto: {
       type: DataTypes.STRING(255),
       allowNull: true
+    },
+    messagesId: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+      field: 'messages_id'
     }
   }, {
     sequelize,

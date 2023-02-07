@@ -20,6 +20,7 @@ export default class MessageRender {
       {reply_markup: {inline_keyboard: keyboard}}
     );
   }
+
   /**
    * @param {String} source
    * @param {StringHTML} caption
@@ -69,6 +70,7 @@ export default class MessageRender {
       }
     );
   }
+
   /**
    * @param {Number} chatId
    * @param {Number} messageId
@@ -119,5 +121,17 @@ export default class MessageRender {
    */
   async removeKeyboard() {
     return this.ctx.editMessageReplyMarkup({reply_markup: {remove_keyboard: true}});
+  }
+
+  /**
+   *
+   * @param userId
+   * @param messageId
+   * @returns removes keyboard from message by message_id
+   */
+  async removeKbById(userId, messageId) {
+    return this.ctx.telegram.editMessageReplyMarkup(userId, messageId,
+      undefined, {reply_markup: {remove_keyboard: true}}
+    );
   }
 }
