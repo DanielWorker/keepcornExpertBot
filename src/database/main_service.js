@@ -24,8 +24,8 @@ const config = {
 
 export default class Queries {
   constructor() {
-    this.connection = process.env.CONNECTION_TUNNEL;
-    // this.connection = process.env.CONNECTION_MAIN;
+    // this.connection = process.env.CONNECTION_TUNNEL;
+    this.connection = process.env.CONNECTION_MAIN;
     this.sequelize = new Sequelize(this.connection, config);
     this.autoModels = new SequelizeAuto(this.sequelize, null, null, options);
     this.model = initModels(this.sequelize);
