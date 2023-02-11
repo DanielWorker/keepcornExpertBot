@@ -1,4 +1,10 @@
-import {cleanStateMessages, getUserPhoto, updateStateMessages} from "../../../utils/main_utils.js";
+import {
+  cleanStateMessages,
+  delete2LastMessages,
+  getImageBot,
+  getUserPhoto,
+  updateStateMessages
+} from "../../../utils/main_utils.js";
 import Queries from "../../../database/main_service.js";
 import MessageRender from "../../../utils/render.js";
 import ExpertProfileCommon from "./common.js";
@@ -28,8 +34,21 @@ export default class ExpertRegistrationCallback extends Queries {
     }
     if (this.callback.startsWith('edit_profile/')) {
       const field = this.callback.split('/')[1]
-      const profileMsgId = this.expert.state.split('/')[1]
-      return this.editProfile(field, profileMsgId)
+      if (this.expert.state.startsWith('edit_profile/')) {
+        await cleanStateMessages(this.ctx, this.messagesId, this.expert)
+        const [ firstMessageId, secondMessageId, thirdMessageId] = this.expert.state.split('/').slice(2)
+        return this.editProfile(field, firstMessageId, secondMessageId, thirdMessageId)
+      } else {
+        const [firstMessageId, secondMessageId, thirdMessageId] = this.expert.state.split('/').slice(1)
+        return this.editProfile(field, firstMessageId, secondMessageId, thirdMessageId)
+      }
+    }
+    if (this.callback.startsWith('approve_location/')) {
+      const timezone = this.callback.split('/')[1]
+      return this.locationApproved(timezone)
+    }
+    if (this.callback === 'back_to_input_location') {
+      return delete2LastMessages(this.ctx, this.expert);
     }
   }
 
@@ -38,41 +57,61 @@ export default class ExpertRegistrationCallback extends Queries {
       const profilePhoto = await getUserPhoto(this.ctx, this.userId)
       await this.expert.update({photo: profilePhoto})
     }
-    return this.common.sendFullProfile(true)
+    return this.common.sendFullProfile()
   }
 
-  async editProfile(field, profileMsgId) {
-    let text, state;
+  async locationApproved(timezone) {
+    await this.expert.update({timezone: timezone});
+    await cleanStateMessages(this.ctx, this.messagesId, this.expert);
+    const includeArray = [
+      this.expert.birthday, this.expert.city, this.expert.timezone, this.expert.email,
+      this.expert.techItems, this.expert.internetSpeed, this.expert.crypto
+    ]
+    if (!includeArray.includes(null)) {
+      // do something
+    }
+    // остальное
+    const [field, firstMessageId, secondMessageId, thirdMessageId] = this.expert.state.split('/').slice(1)
+    return this.common.editProfileMessage(field, firstMessageId, secondMessageId, thirdMessageId)
+  }
+
+
+  async editProfile(field, firstMessageId, secondMessageId, thirdMessageId) {
+    let text, state, photo;
     switch (field) {
       case 'birthday':
         text = "*🚸 Введите: дату рождения*\n_Например: 17.04.1998_"
-        state = `edit_profile/birthday/${profileMsgId}`
+        state = `edit_profile/birthday/${firstMessageId}/${secondMessageId}/${thirdMessageId}`
         break;
       case 'city':
         text = "*🗺 Введите Город*\n_Пример: Россия, Москва_"
-        state = `edit_profile/city/${profileMsgId}`
+        state = `edit_profile/city/${firstMessageId}/${secondMessageId}/${thirdMessageId}`
         break;
       case 'email':
         text = "*✉️ Введите почту*\n_Пример: faldincreator@gmail.com_"
-        state = `edit_profile/email/${profileMsgId}`
+        state = `edit_profile/email/${firstMessageId}/${secondMessageId}/${thirdMessageId}`
         break;
       case 'techItems':
         text = "*🧑🏻‍💻 Введите имя вашего рабочего устройства*\n_Пример: Macbook Pro_"
-        state = `edit_profile/techItems/${profileMsgId}`
+        state = `edit_profile/techItems/${firstMessageId}/${secondMessageId}/${thirdMessageId}`
         break;
       case 'internetSpeed':
-        text = "*🌐 Введите скорость вашего интернета*\n_Пример: 250_"
-        state = `edit_profile/internetSpeed/${profileMsgId}`
+        text = "*🌐 Введите скорость вашего интернета\n\nhttps://www.speedtest.net/*\n\n_Пример: 250_"
+        state = `edit_profile/internetSpeed/${firstMessageId}/${secondMessageId}/${thirdMessageId}`
+        photo = getImageBot('internet_speed')
         break;
       case 'crypto':
         text = "*🌐 Введите адрес вашего электронного кошелька*\n_Пример: bc1qxmsrcs6h5p8x36t0c3kj5yhnrs0jkrdtc6hg39_"
-        state = `edit_profile/crypto/${profileMsgId}`
+        state = `edit_profile/crypto/${firstMessageId}/${secondMessageId}/${thirdMessageId}`
         break;
     }
-    await cleanStateMessages(this.ctx, this.messagesId, this.expert)
-    await this.render.removeKbById(this.userId, profileMsgId)
     await this.expert.update({state: state})
-    return this.ctx.replyWithMarkdown(text)
-      .then(res => updateStateMessages([res.message_id], this.expert));
+    if (typeof photo !== 'undefined') {
+      return this.ctx.replyWithPhoto({source: photo}, {caption: text, parse_mode: 'Markdown'})
+        .then(res => updateStateMessages([res.message_id], this.expert));
+    } else {
+      return this.ctx.replyWithMarkdown(text)
+        .then(res => updateStateMessages([res.message_id], this.expert));
+    }
   }
 }

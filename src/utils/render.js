@@ -116,6 +116,11 @@ export default class MessageRender {
     return this.ctx.editMessageReplyMarkup({inline_keyboard: keyboard});
   }
 
+  async editKeyboardById(userId, messageId, keyboard) {
+    return this.ctx.telegram.editMessageReplyMarkup(userId, messageId,
+      undefined, {inline_keyboard: keyboard})
+  }
+
   /**
    * @returns removes last keyboard in chat
    */

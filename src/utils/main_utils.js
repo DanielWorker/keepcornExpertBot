@@ -97,3 +97,14 @@ export function getAge(birthDate) {
   }
   return age;
 }
+
+export async function delete2LastMessages(ctx, user) {
+  let i = 0
+  let messagesId = JSON.parse(user.messagesId)
+  while (i !== 2) {
+    const messageId = messagesId.pop();
+    await ctx.telegram.deleteMessage(user.userId, messageId);
+    i++;
+  }
+  return user.update({messagesId: JSON.stringify(messagesId)});
+}

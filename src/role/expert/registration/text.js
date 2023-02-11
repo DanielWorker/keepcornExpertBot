@@ -1,5 +1,11 @@
 import MessageRender from "../../../utils/render.js";
-import {cleanStateMessages, getAge, getImageBot, updateStateMessages} from "../../../utils/main_utils.js";
+import {
+  cleanStateMessages,
+  getAge,
+  getCoordinates,
+  getImageBot,
+  updateStateMessages
+} from "../../../utils/main_utils.js";
 import {expertRegistrationCaptions as captions} from "./captions.js";
 import {expertRegistrationKb as kb} from "./keyboards.js";
 import ExpertProfileCommon from "./common.js";
@@ -27,8 +33,8 @@ export default class ExpertRegistrationText {
 
   async stateHandler() {
     if (this.expert.state.startsWith('edit_profile/')) {
-      const [field, profileMsgId] = this.expert.state.split('/').slice(1);
-      return this.editProfile(field, profileMsgId);
+      const [field, firstMessageId, secondMessageId, thirdMessageId] = this.expert.state.split('/').slice(1);
+      return this.editProfile(field, firstMessageId, secondMessageId, thirdMessageId);
     }
   }
 
@@ -38,7 +44,8 @@ export default class ExpertRegistrationText {
     await this.render.sendMenu(image, text, kb.startKb)
   }
 
-  async editProfile(field, profileMsgId) {
+  async editProfile(field, firstMessageId, secondMessageId, thirdMessageId) {
+    let city;
     switch (field) {
       case 'birthday': {
         const isMatch = this.text.match(/^\d{2}\.\d{2}\.\d{4}$/);
@@ -61,8 +68,15 @@ export default class ExpertRegistrationText {
         break;
       }
       case 'city':
+        city = await getCoordinates(this.text);
+        if (!city) {
+          await this.ctx
+            .reply('Ничего не найдено')
+            .then(res => this.messagesId.push(res.message_id, this.messageId));
+          return updateStateMessages(this.messagesId, this.expert);
+        }
         await this.expert.update({city: this.text});
-        break;
+        return this.common.setProfileCity(city.lat, city.lon);
       case 'email':
         await this.expert.update({email: this.text});
         break;
@@ -78,6 +92,13 @@ export default class ExpertRegistrationText {
     }
     this.messagesId.push(this.messageId);
     await cleanStateMessages(this.ctx, this.messagesId, this.expert);
-    return this.common.sendFullEditedProfile(profileMsgId)
+    const includeArray = [
+      this.expert.birthday, this.expert.city, this.expert.timezone, this.expert.email,
+      this.expert.techItems, this.expert.internetSpeed, this.expert.crypto
+    ]
+    if (!includeArray.includes(null)) {
+      // do something
+    }
+    return this.common.editProfileMessage(field, firstMessageId, secondMessageId, thirdMessageId)
   }
 }

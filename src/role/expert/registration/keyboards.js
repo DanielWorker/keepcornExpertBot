@@ -11,6 +11,13 @@ export const expertRegistrationKb = {
   ]
 }
 
+export function approveLocation(timezone) {
+  return [[
+    Markup.button.callback("👈🏻 Назад", "e-reg/back_to_input_location"),
+    Markup.button.callback("✅ Да", `e-reg/approve_location/${timezone}`)
+  ]]
+}
+
 export function profileKbGen(expert) {
   const profileData = {
     birthday: expert.birthday ? expert.birthday : '. . .',
