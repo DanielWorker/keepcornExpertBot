@@ -67,6 +67,10 @@ export default class Experts extends Model {
       type: DataTypes.STRING(255),
       allowNull: true,
       field: 'messages_id'
+    },
+    timezone: {
+      type: DataTypes.STRING(255),
+      allowNull: true
     }
   }, {
     sequelize,
